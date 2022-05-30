@@ -1,0 +1,47 @@
+#!/bin/python3
+
+from pathlib import Path;
+import sys;
+import subprocess;
+
+class Parser:
+    def __init__(self, _argv):
+        self.__input_args = _argv;
+
+    def parse_args(self):
+        if "-B" in self.__input_args:
+            build_index = self.__input_args.index("-B");
+            build_arg_index = build_index + 1;
+            rel_path = Path(self.__input_args[build_arg_index]);
+            abs_path = Path.cwd() / self.__input_args[build_arg_index];
+            print("Target build directory: ", abs_path.__str__());
+            if (rel_path / "CMakeCache.txt").exists():
+                (rel_path / "CMakeCache.txt").unlink();
+                self.__input_args[build_arg_index] = rel_path.__str__();
+            elif (abs_path / "CMakeCache.txt").exists():
+                (abs_path / "CMakeCache.txt").unlink();
+                self.__input_args[build_arg_index] = abs_path.__str__();
+            else:
+                if Path(self.__input_args[build_arg_index]).exists():
+                    print("Target build folder does not have CMakeCache.txt. Nothing to remove.");
+                else:
+                    print("Target build folder '" + abs_path.__str__() + "' does not exist");
+        elif (Path.cwd() / "CMakeCache.txt").exists():
+            print("Assuming current working directory as build directory. Found CMakeCache.txt");
+            (Path.cwd() / "CMakeCache.txt").unlink();
+            
+        else:
+            print("Missing -B <arg> to delete the file or current working directory is not a build directory.");
+            exit(1);
+
+        args = " ".join(['cmake'] + self.__input_args[1:]);
+        subprocess.run(args, shell=True);
+
+
+if __name__ == "__main__":
+    print("Reconfiguring cmake");
+
+    parser = Parser(sys.argv);
+    parser.parse_args();
+
+
